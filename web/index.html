@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScrapeOwl — Web Scraping Operations Platform</title>
+  <meta name="description" content="ScrapeOwl is an open-source, self-hostable web scraping platform with browser automation, proxy rotation, CAPTCHA solving, and AI data extraction." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+
+<!-- Particle Canvas Background -->
+<canvas id="particles" aria-hidden="true"></canvas>
+
+<!-- App Shell -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <div class="logo" aria-label="ScrapeOwl logo">
+        <svg class="logo-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="20" cy="20" r="18" fill="url(#owlGrad)" opacity="0.15"/>
+          <ellipse cx="14" cy="17" rx="5" ry="6" fill="url(#owlGrad)"/>
+          <ellipse cx="26" cy="17" rx="5" ry="6" fill="url(#owlGrad)"/>
+          <circle cx="14" cy="17" r="3" fill="#0a0e1a"/>
+          <circle cx="26" cy="17" r="3" fill="#0a0e1a"/>
+          <circle cx="15" cy="16" r="1" fill="#00ffc6"/>
+          <circle cx="27" cy="16" r="1" fill="#00ffc6"/>
+          <path d="M17 25 Q20 28 23 25" stroke="url(#owlGrad)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+          <path d="M8 12 L5 8 M32 12 L35 8" stroke="url(#owlGrad)" stroke-width="2" stroke-linecap="round"/>
+          <defs>
+            <linearGradient id="owlGrad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#00ffc6"/>
+              <stop offset="100%" stop-color="#0070f3"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div>
+          <span class="logo-name">ScrapeOwl</span>
+          <span class="logo-badge">OSS</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')" aria-current="page">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 4a1 1 0 011-1h12a1 1 0 010 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 010 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h6a1 1 0 010 2H4a1 1 0 01-1-1z"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" id="nav-jobs" onclick="showPage('jobs')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+        <span>Jobs</span>
+      </button>
+      <button class="nav-item" id="nav-runs" onclick="showPage('runs')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+        <span>Runs</span>
+      </button>
+      <button class="nav-item" id="nav-new-job" onclick="showPage('new-job')">
+        <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+        <span>New Job</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="connection-status" id="ws-status">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting...</span>
+      </div>
+      <a href="https://github.com/ashleyfullero/scrapeowl" target="_blank" rel="noopener" class="github-link" id="github-link">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+        <span>GitHub</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main id="main-content">
+
+    <!-- ===== DASHBOARD PAGE ===== -->
+    <div id="page-dashboard" class="page active">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Real-time scraping operations overview</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="refreshAll()" id="refresh-btn">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card" id="stat-total-runs">
+          <div class="stat-icon runs-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/></svg>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value" id="total-runs">—</div>
+            <div class="stat-label">Total Runs</div>
+          </div>
+          <div class="stat-trend up">↑</div>
+        </div>
+        <div class="stat-card" id="stat-total-records">
+          <div class="stat-icon records-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value" id="total-records">—</div>
+            <div class="stat-label">Records Scraped</div>
+          </div>
+          <div class="stat-trend up">↑</div>
+        </div>
+        <div class="stat-card" id="stat-success-rate">
+          <div class="stat-icon success-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value" id="success-rate">—</div>
+            <div class="stat-label">Success Rate</div>
+          </div>
+          <div class="stat-trend up">↑</div>
+        </div>
+        <div class="stat-card" id="stat-active-runs">
+          <div class="stat-icon active-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>
+          </div>
+          <div class="stat-body">
+            <div class="stat-value" id="active-runs">—</div>
+            <div class="stat-label">Active Now</div>
+          </div>
+          <div class="stat-pulse"></div>
+        </div>
+      </div>
+
+      <!-- Live Activity Feed + Recent Runs -->
+      <div class="dashboard-grid">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Live Activity</h2>
+            <span class="live-badge">
+              <span class="pulse-dot"></span>
+              LIVE
+            </span>
+          </div>
+          <div class="activity-feed" id="activity-feed" role="log" aria-live="polite" aria-label="Live activity feed">
+            <div class="activity-empty">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v4.59L7.3 9.24a.75.75 0 00-1.1 1.02l3.25 3.5a.75.75 0 001.1 0l3.25-3.5a.75.75 0 10-1.1-1.02l-1.95 2.1V6.75z"/></svg>
+              <p>Waiting for job activity...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">Recent Runs</h2>
+            <button class="btn btn-ghost btn-sm" onclick="showPage('runs')" id="view-all-runs">View All</button>
+          </div>
+          <div class="runs-list" id="recent-runs-list">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>Loading runs...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jobs Overview -->
+      <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+          <h2 class="card-title">Scheduled Jobs</h2>
+          <button class="btn btn-primary btn-sm" onclick="showPage('new-job')" id="create-job-dashboard">
+            + New Job
+          </button>
+        </div>
+        <div id="dashboard-jobs-list">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Loading jobs...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== JOBS PAGE ===== -->
+    <div id="page-jobs" class="page">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Jobs</h1>
+          <p class="page-subtitle">Manage your scraping job definitions</p>
+        </div>
+        <button class="btn btn-primary" onclick="showPage('new-job')" id="create-job-btn">
+          + New Job
+        </button>
+      </header>
+
+      <div id="jobs-grid" class="jobs-grid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading jobs...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RUNS PAGE ===== -->
+    <div id="page-runs" class="page">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Run History</h1>
+          <p class="page-subtitle">View and monitor all scraping runs</p>
+        </div>
+        <div class="header-filters">
+          <select id="runs-filter-status" class="select-input" onchange="filterRuns()" aria-label="Filter by status">
+            <option value="">All Status</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="running">Running</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </header>
+
+      <div class="card">
+        <table class="runs-table" role="grid" aria-label="Run history">
+          <thead>
+            <tr>
+              <th scope="col">Job</th>
+              <th scope="col">Status</th>
+              <th scope="col">Started</th>
+              <th scope="col">Duration</th>
+              <th scope="col">Records</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="runs-table-body">
+            <tr>
+              <td colspan="6" class="table-loading">
+                <div class="spinner"></div>
+                <span>Loading runs...</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== NEW JOB PAGE ===== -->
+    <div id="page-new-job" class="page">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Create Job</h1>
+          <p class="page-subtitle">Define a new web scraping job with YAML</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" onclick="loadTemplate('basic')" id="template-basic">Basic Template</button>
+          <button class="btn btn-ghost" onclick="loadTemplate('full')" id="template-full">Full Template</button>
+        </div>
+      </header>
+
+      <div class="create-job-layout">
+        <div class="card editor-card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" style="width:18px;height:18px;"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+              YAML Definition
+            </h2>
+            <div class="editor-actions">
+              <button class="btn btn-ghost btn-sm" onclick="validateYAML()" id="validate-yaml-btn">Validate</button>
+              <div id="validate-result" class="validate-badge hidden"></div>
+            </div>
+          </div>
+          <div class="editor-wrapper">
+            <textarea
+              id="yaml-editor"
+              class="yaml-editor"
+              spellcheck="false"
+              autocomplete="off"
+              aria-label="YAML job definition editor"
+              placeholder="# Paste or write your YAML job definition here..."
+            ></textarea>
+            <div class="editor-line-numbers" id="line-numbers" aria-hidden="true"></div>
+          </div>
+          <div class="editor-footer">
+            <span id="editor-status" class="editor-status">Ready</span>
+            <div class="editor-footer-actions">
+              <button class="btn btn-ghost btn-sm" onclick="clearEditor()" id="clear-editor-btn">Clear</button>
+              <button class="btn btn-primary" onclick="createJob()" id="create-job-submit-btn">
+                <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+                Create Job
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-panel">
+          <div class="card help-card">
+            <div class="card-header">
+              <h2 class="card-title">Quick Reference</h2>
+            </div>
+            <div class="help-content">
+              <div class="help-section">
+                <h3>Actions</h3>
+                <div class="code-list">
+                  <code>click</code>
+                  <code>type</code>
+                  <code>navigate</code>
+                  <code>scroll</code>
+                  <code>wait</code>
+                  <code>hover</code>
+                  <code>screenshot</code>
+                  <code>select</code>
+                </div>
+              </div>
+              <div class="help-section">
+                <h3>Extractor Types</h3>
+                <div class="code-list">
+                  <code>css</code>
+                  <code>xpath</code>
+                  <code>ai</code>
+                  <code>regex</code>
+                </div>
+              </div>
+              <div class="help-section">
+                <h3>Output Formats</h3>
+                <div class="code-list">
+                  <code>jsonl</code>
+                  <code>csv</code>
+                </div>
+              </div>
+              <div class="help-section">
+                <h3>CAPTCHA Providers</h3>
+                <div class="code-list">
+                  <code>none</code>
+                  <code>2captcha</code>
+                  <code>anticaptcha</code>
+                </div>
+              </div>
+              <div class="help-section">
+                <h3>Env Vars</h3>
+                <p class="help-text">Use <code>${VAR_NAME}</code> for secrets.<br/>Default: <code>${VAR:-default}</code></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== JOB DETAIL PAGE ===== -->
+    <div id="page-job-detail" class="page">
+      <header class="page-header">
+        <button class="btn btn-ghost" onclick="showPage('jobs')" id="back-to-jobs-btn">
+          ← Back to Jobs
+        </button>
+        <div class="header-actions" id="job-detail-actions"></div>
+      </header>
+      <div id="job-detail-content"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Run Log Modal -->
+<div id="run-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+  <div class="modal-backdrop" onclick="closeModal()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modal-title" class="modal-title">Run Details</h2>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close modal">×</button>
+    </div>
+    <div id="modal-body" class="modal-body">
+      <div class="run-log" id="run-log" role="log" aria-live="polite" aria-label="Run log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notifications -->
+<div id="toast-container" class="toast-container" role="alert" aria-live="assertive"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
