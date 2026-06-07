@@ -1,0 +1,74 @@
+name: "ecommerce-catalog"
+start_url: "https://shop.example.com/catalog"
+
+steps:
+  - action: wait
+    selector: ".product-grid"
+    wait: 2s
+  - action: scroll
+    wait: 1s
+  - action: click
+    selector: "select#sort"
+    wait: 500ms
+    optional: true
+  - action: select
+    selector: "select#sort"
+    text: "price-asc"
+    wait: 2s
+    optional: true
+
+extractors:
+  - name: product_names
+    type: css
+    selector: ".product-card .name"
+    attribute: text
+    multiple: true
+
+  - name: product_prices
+    type: css
+    selector: ".product-card .price"
+    attribute: text
+    multiple: true
+
+  - name: product_ratings
+    type: css
+    selector: ".product-card .rating"
+    attribute: text
+    multiple: true
+
+  - name: product_urls
+    type: css
+    selector: ".product-card a"
+    attribute: href
+    multiple: true
+
+  - name: catalog_metadata
+    type: ai
+    prompt: >
+      Analyze the product catalog page. Extract:
+      1. Total number of products shown
+      2. Price range (min and max)
+      3. Available categories or filters
+      Return as a JSON object with keys: total_products, min_price, max_price, categories.
+
+output:
+  format: csv
+  path: "./output/catalog.csv"
+
+proxy:
+  type: rotating
+  list:
+    - "http://proxy1:8080"
+    - "http://proxy2:8080"
+    - "http://proxy3:8080"
+
+ai:
+  provider: openai
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4o-mini"
+
+retry:
+  max_attempts: 3
+  backoff: "exponential"
+
+schedule: "0 0 * * *"

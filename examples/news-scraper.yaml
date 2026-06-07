@@ -1,0 +1,38 @@
+name: "hacker-news-scraper"
+start_url: "https://news.ycombinator.com"
+
+steps:
+  - action: wait
+    selector: ".itemlist"
+    wait: 1s
+
+extractors:
+  - name: titles
+    type: css
+    selector: ".titleline > a"
+    attribute: text
+    multiple: true
+
+  - name: links
+    type: css
+    selector: ".titleline > a"
+    attribute: href
+    multiple: true
+
+  - name: scores
+    type: css
+    selector: ".score"
+    attribute: text
+    multiple: true
+
+  - name: summary
+    type: ai
+    prompt: "Look at the page content and identify the top 3 trending topics based on the story titles. Return a JSON object with key 'trending_topics' containing an array of strings."
+
+output:
+  format: jsonl
+  path: "./output/hn-stories.jsonl"
+
+retry:
+  max_attempts: 2
+  backoff: "linear"

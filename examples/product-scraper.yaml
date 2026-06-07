@@ -1,0 +1,60 @@
+name: "product-scraper"
+start_url: "https://example.com/products"
+
+steps:
+  - action: click
+    selector: "button.load-more"
+    wait: 2s
+    optional: true
+  - action: type
+    selector: "input#search"
+    text: "laptop"
+    wait: 1s
+  - action: click
+    selector: "button.search-btn"
+    wait: 3s
+
+extractors:
+  - name: title
+    type: css
+    selector: "h1.product-title"
+    attribute: text
+
+  - name: price
+    type: css
+    selector: ".price .value"
+    attribute: text
+
+  - name: image_url
+    type: css
+    selector: "img.product-image"
+    attribute: src
+
+  - name: description
+    type: ai
+    prompt: "Extract the full product description text. Return a JSON object with key 'description'."
+
+output:
+  format: jsonl
+  path: "./output/products.jsonl"
+
+proxy:
+  type: static
+  list:
+    - "http://user:pass@proxy1:8080"
+    - "http://user:pass@proxy2:8080"
+
+captcha:
+  provider: 2captcha
+  api_key: "${CAPTCHA_API_KEY}"
+
+ai:
+  provider: openai
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4o"
+
+retry:
+  max_attempts: 3
+  backoff: "exponential"
+
+schedule: "0 */6 * * *"

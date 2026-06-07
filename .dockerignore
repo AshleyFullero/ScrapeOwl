@@ -1,0 +1,10 @@
+.git/
+dist/
+*.db
+*.db-wal
+*.db-shm
+output/
+coverage.out
+coverage.html
+.env
+*.log

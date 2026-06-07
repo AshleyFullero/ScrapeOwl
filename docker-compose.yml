@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  scrapeowl:
+    build: .
+    image: scrapeowl:latest
+    container_name: scrapeowl
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    volumes:
+      - ./data:/scrapeowl/data
+      - ./output:/scrapeowl/output
+      - ./examples:/scrapeowl/examples
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CAPTCHA_API_KEY=${CAPTCHA_API_KEY}
+      - ANTICAPTCHA_API_KEY=${ANTICAPTCHA_API_KEY}
+    command: ["serve", "--addr", ":8080", "--db", "/scrapeowl/data/scrapeowl.db"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/stats"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_ADMIN  # Required by Chromium sandboxing
+    shm_size: '2gb'   # Needed for Chrome stability
+
+volumes:
+  data:
+    driver: local
