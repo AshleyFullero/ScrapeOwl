@@ -219,7 +219,7 @@ scrapeowl/
 └── web/                   # Dashboard (HTML/CSS/JS)
 ```
 
-## 🔧 Building
+## Building
 
 ```bash
 # Build for current platform
@@ -238,7 +238,7 @@ make run
 make docker
 ```
 
-## 🛣️ Roadmap
+## Roadmap
 
 ### Open Source (Current)
 - ✅ YAML job definitions
@@ -268,7 +268,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 License
+## License
 
 ScrapeOwl is open-source software licensed under the [Apache 2.0 License](LICENSE).
 
