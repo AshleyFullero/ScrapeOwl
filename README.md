@@ -258,7 +258,7 @@ make docker
 - 👥 Team access & collaboration
 - 🔑 SSO / Enterprise auth
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
