@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🦉 ScrapeOwl</h1>
+  <h1> ScrapeOwl</h1>
   <p><strong>Next-generation web scraping operations platform</strong></p>
   <p>Self-hostable · Browser Automation · AI Extraction · Real-time Dashboard</p>
   
@@ -144,7 +144,7 @@ schedule: "0 */6 * * *"  # optional cron expression
 | `select` | Select dropdown option | `selector`, `text` |
 | `clear` | Clear an input | `selector` |
 
-## 🔍 Extractor Types
+## Extractor Types
 
 | Type | Description |
 |------|-------------|
@@ -155,7 +155,7 @@ schedule: "0 */6 * * *"  # optional cron expression
 
 Add `multiple: true` to any extractor to get all matching elements as an array.
 
-## 🔐 Environment Variable Support
+## Environment Variable Support
 
 Reference environment variables in your YAML with `${VAR_NAME}`:
 
@@ -168,7 +168,7 @@ captcha:
   api_key: "${CAPTCHA_API_KEY:-none}"
 ```
 
-## 🌐 REST API
+## REST API
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -199,7 +199,7 @@ Connect to `ws://localhost:8080/ws` for real-time events:
 
 Filter by job: `ws://localhost:8080/ws?job=product-scraper`
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 scrapeowl/
