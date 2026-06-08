@@ -275,7 +275,6 @@ ScrapeOwl is open-source software licensed under the [Apache 2.0 License](LICENS
 ---
 
 <div align="center">
-  <p>Built with ❤️ for the web scraping community</p>
   <p>
     <a href="https://github.com/ashleyfullero/scrapeowl/issues">Report Bug</a> ·
     <a href="https://github.com/ashleyfullero/scrapeowl/issues">Request Feature</a>
