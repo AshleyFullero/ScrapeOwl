@@ -75,7 +75,7 @@ open http://localhost:8080
 ./dist/scrapeowl run --file ./examples/news-scraper.yaml
 ```
 
-## 📋 Job Definition
+## Job Definition
 
 Jobs are defined in YAML files. Here's a complete example:
 
@@ -130,7 +130,7 @@ retry:
 schedule: "0 */6 * * *"  # optional cron expression
 ```
 
-## 🎯 Supported Actions
+## Supported Actions
 
 | Action | Description | Required Fields |
 |--------|-------------|-----------------|
@@ -185,7 +185,7 @@ captcha:
 | POST | `/api/validate` | Validate YAML |
 | WS | `/ws` | Real-time event stream |
 
-## 🔌 WebSocket Events
+## WebSocket Events
 
 Connect to `ws://localhost:8080/ws` for real-time events:
 
