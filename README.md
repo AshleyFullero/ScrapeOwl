@@ -7,7 +7,7 @@
   [![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8.svg)](https://golang.org)
   [![Open Source](https://img.shields.io/badge/open--core-OSS-brightgreen.svg)](https://github.com/ashleyfullero/scrapeowl)
 </div>
-11
+
 ---
 
 ScrapeOwl eliminates the need to manually stitch together browsers, proxies, CAPTCHA solvers, and AI extraction. Define your scraping jobs in simple YAML, and ScrapeOwl handles the rest — with a beautiful real-time dashboard to monitor everything.
