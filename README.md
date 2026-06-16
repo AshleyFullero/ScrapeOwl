@@ -143,6 +143,7 @@ schedule: "0 */6 * * *"  # optional cron expression
 | `screenshot` | Take a screenshot | `selector` (as path) |
 | `select` | Select dropdown option | `selector`, `text` |
 | `clear` | Clear an input | `selector` |
+| `press` | Press a keyboard key | `key` (e.g. "Enter", "Tab") |
 
 ## Extractor Types
 

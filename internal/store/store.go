@@ -69,7 +69,7 @@ func (s *Store) Close() error {
 func (s *Store) migrate() error {
 	for _, migration := range migrations {
 		if _, err := s.db.Exec(migration); err != nil {
-			return fmt.Errorf("migration failed (%s): %w", migration[:min(50, len(migration))], err)
+			return fmt.Errorf("migration failed (%s): %w", migration[:minLen(50, len(migration))], err)
 		}
 	}
 	return nil
@@ -294,7 +294,8 @@ func boolToInt(b bool) int {
 	return 0
 }
 
-func min(a, b int) int {
+// minLen returns the smaller of a and b (used for migration error previews).
+func minLen(a, b int) int {
 	if a < b {
 		return a
 	}

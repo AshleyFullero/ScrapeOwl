@@ -215,6 +215,18 @@ func (b *Browser) RunStep(step config.Step) error {
 			chromedp.SetValue(step.Selector, step.Text, chromedp.ByQuery),
 		)
 
+	case "press":
+		key := step.Key
+		if key == "" {
+			key = step.Text // allow text field for key name
+		}
+		if key == "" {
+			return fmt.Errorf("press action requires a key name (e.g. 'Enter', 'Tab')")
+		}
+		tasks = append(tasks,
+			chromedp.KeyEvent(key),
+		)
+
 	default:
 		return fmt.Errorf("unknown action: %s", step.Action)
 	}

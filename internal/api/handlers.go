@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,10 +22,11 @@ import (
 
 // Handlers holds all API handler dependencies
 type Handlers struct {
-	store     *store.Store
-	hub       *Hub
-	scheduler *scheduler.Scheduler
-	logger    *slog.Logger
+	store      *store.Store
+	hub        *Hub
+	scheduler  *scheduler.Scheduler
+	logger     *slog.Logger
+	mu         sync.RWMutex
 	activeRuns map[string]*runner.Run
 	runCancel  map[string]context.CancelFunc
 }
@@ -254,8 +256,10 @@ func (h *Handlers) launchRun(job *store.Job) (string, error) {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
+	h.mu.Lock()
 	h.activeRuns[runID] = rn
 	h.runCancel[runID] = cancel
+	h.mu.Unlock()
 
 	// Subscribe to events and broadcast to WebSocket
 	ch := bus.Subscribe()
@@ -269,8 +273,10 @@ func (h *Handlers) launchRun(job *store.Job) (string, error) {
 	go func() {
 		defer func() {
 			bus.Close()
+			h.mu.Lock()
 			delete(h.activeRuns, runID)
 			delete(h.runCancel, runID)
+			h.mu.Unlock()
 			cancel()
 		}()
 
@@ -308,7 +314,9 @@ func (h *Handlers) StopRun(w http.ResponseWriter, r *http.Request) {
 	id := extractID(r.URL.Path, "/api/runs/")
 	id = strings.TrimSuffix(id, "/stop")
 
+	h.mu.RLock()
 	cancel, ok := h.runCancel[id]
+	h.mu.RUnlock()
 	if !ok {
 		writeError(w, http.StatusNotFound, "run not found or already completed")
 		return
@@ -368,7 +376,7 @@ func (h *Handlers) GetStats(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, statsResponse{
 		Stats:      stats,
-		ActiveRuns: len(h.activeRuns),
+		ActiveRuns: func() int { h.mu.RLock(); defer h.mu.RUnlock(); return len(h.activeRuns) }(),
 		License:    license.Get(),
 	})
 }
