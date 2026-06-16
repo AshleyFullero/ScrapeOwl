@@ -11,7 +11,7 @@ require (
 )
 
 require (
-	github.com/chromedp/cdproto v0.0.0-20250107230625-b3d31d5c0400 // indirect
+	github.com/chromedp/cdproto v0.0.0-20241022234924-b3d31d5c0400 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
