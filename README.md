@@ -12,24 +12,24 @@
 
 ScrapeOwl eliminates the need to manually stitch together browsers, proxies, CAPTCHA solvers, and AI extraction. Define your scraping jobs in simple YAML, and ScrapeOwl handles the rest — with a beautiful real-time dashboard to monitor everything.
 
-## ✨ Features
+## Features
 
 | Feature | Status |
 |---------|--------|
-| 🌐 Browser Automation (Click, Type, Scroll, Hover) | ✅ |
-| 🎯 CSS & XPath Data Extraction | ✅ |
-| 🤖 AI-Powered Extraction (OpenAI / Anthropic) | ✅ |
-| 🔄 Proxy Rotation (Static & Rotating Pools) | ✅ |
-| 🧩 CAPTCHA Solving (2captcha, AntiCaptcha) | ✅ |
-| 📅 Cron Job Scheduling | ✅ |
-| 📊 Real-time Dashboard with WebSocket | ✅ |
-| 💾 JSONL & CSV Output | ✅ |
-| 🔁 Retry with Exponential Backoff | ✅ |
-| 🐳 Docker & Docker Compose | ✅ |
-| 🔑 Environment Variable Interpolation | ✅ |
-| 📋 YAML Job Definitions | ✅ |
+| Browser Automation (Click, Type, Scroll, Hover) | ✅ |
+| CSS & XPath Data Extraction | ✅ |
+| AI-Powered Extraction (OpenAI / Anthropic) | ✅ |
+| Proxy Rotation (Static & Rotating Pools) | ✅ |
+| CAPTCHA Solving (2captcha, AntiCaptcha) | ✅ |
+| Cron Job Scheduling | ✅ |
+| Real-time Dashboard with WebSocket | ✅ |
+| JSONL & CSV Output | ✅ |
+| Retry with Exponential Backoff | ✅ |
+| Docker & Docker Compose | ✅ |
+| Environment Variable Interpolation | ✅ |
+| YAML Job Definitions | ✅ |
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Run directly (requires Go 1.22+)
 
@@ -253,11 +253,11 @@ make docker
 - ✅ Docker deployment
 
 ### Pro (Coming Soon — Cloud Managed)
-- ☁️ Managed cloud execution (pay-per-page)
-- 📈 Advanced analytics & reporting
-- 🔗 Webhook notifications
-- 👥 Team access & collaboration
-- 🔑 SSO / Enterprise auth
+- Managed cloud execution (pay-per-page)
+- Advanced analytics & reporting
+- Webhook notifications
+- Team access & collaboration
+- SSO / Enterprise auth
 
 ## Contributing
 
