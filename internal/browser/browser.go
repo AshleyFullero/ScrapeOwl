@@ -193,7 +193,10 @@ func (b *Browser) RunStep(step config.Step) error {
 		}
 		tasks = append(tasks,
 			chromedp.WaitVisible(step.Selector, chromedp.ByQuery),
-			chromedp.MouseOver(step.Selector, chromedp.ByQuery),
+			chromedp.Evaluate(
+				fmt.Sprintf(`(function(){var el=document.querySelector(%q);if(el){el.dispatchEvent(new MouseEvent('mouseover',{bubbles:true}));el.dispatchEvent(new MouseEvent('mouseenter',{bubbles:false}));}})()`, step.Selector),
+				nil,
+			),
 		)
 
 	case "scroll":
