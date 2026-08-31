@@ -39,9 +39,13 @@ type Run struct {
 
 // Stats holds aggregated platform statistics
 type Stats struct {
-	TotalRuns    int `json:"total_runs"`
-	TotalRecords int `json:"total_records"`
-	TotalErrors  int `json:"total_errors"`
+	TotalRuns       int     `json:"total_runs"`
+	TotalRecords    int     `json:"total_records"`
+	TotalErrors     int     `json:"total_errors"`
+	TodayRuns       int     `json:"today_runs"`
+	TodayErrors     int     `json:"today_errors"`
+	AvgDurationMS   float64 `json:"avg_duration_ms"`
+	AvgRecordsPerRun float64 `json:"avg_records_per_run"`
 }
 
 // Open opens (or creates) the SQLite database at the given path
@@ -239,7 +243,7 @@ func (s *Store) ListRuns(jobID string, limit int) ([]*Run, error) {
 	return runs, rows.Err()
 }
 
-// GetStats returns platform-wide statistics
+// GetStats returns platform-wide statistics with enriched fields
 func (s *Store) GetStats() (*Stats, error) {
 	row := s.db.QueryRow(
 		`SELECT total_runs, total_records, total_errors FROM stats WHERE id = 1`,
@@ -249,6 +253,24 @@ func (s *Store) GetStats() (*Stats, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Today's runs and errors
+	_ = s.db.QueryRow(
+		`SELECT COUNT(*), COALESCE(SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END),0)
+		 FROM runs WHERE date(created_at) = date('now')`,
+	).Scan(&st.TodayRuns, &st.TodayErrors)
+
+	// Average duration in ms (for completed runs with both timestamps)
+	_ = s.db.QueryRow(
+		`SELECT COALESCE(AVG((julianday(completed_at) - julianday(started_at)) * 86400000), 0)
+		 FROM runs WHERE started_at IS NOT NULL AND completed_at IS NOT NULL`,
+	).Scan(&st.AvgDurationMS)
+
+	// Average records per successful run
+	_ = s.db.QueryRow(
+		`SELECT COALESCE(AVG(records), 0) FROM runs WHERE status = 'success' AND records > 0`,
+	).Scan(&st.AvgRecordsPerRun)
+
 	return &st, nil
 }
 
