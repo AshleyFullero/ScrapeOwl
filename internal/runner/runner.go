@@ -95,6 +95,15 @@ func (r *Runner) Execute(ctx context.Context, run *Run) {
 	run.StartedAt = time.Now()
 	bus := run.Bus
 
+	// Apply job-level timeout if configured
+	if r.cfg.Timeout != "" {
+		if dur, err := time.ParseDuration(r.cfg.Timeout); err == nil {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(ctx, dur)
+			defer cancel()
+		}
+	}
+
 	bus.SetStatus("running", 0, run.JobName, run.ID)
 	bus.Log(LogLevelInfo, fmt.Sprintf("Starting job '%s'", r.cfg.Name), run.JobName, run.ID)
 
@@ -118,7 +127,7 @@ func (r *Runner) Execute(ctx context.Context, run *Run) {
 			}
 		}
 
-		records, err := r.executeOnce(ctx, run)
+		records, extracted, err := r.executeOnce(ctx, run)
 		if err == nil {
 			run.Records = records
 			now := time.Now()
@@ -133,6 +142,16 @@ func (r *Runner) Execute(ctx context.Context, run *Run) {
 				RunID:     run.ID,
 				Data:      map[string]interface{}{"records": records},
 			})
+			// Persist extracted data
+			if r.store != nil && len(extracted) > 0 {
+				if stErr := r.store.SaveExtractedData(run.ID, extracted); stErr != nil {
+					r.logger.Warn("saving extracted data", "err", stErr)
+				}
+			}
+			// Fire webhook
+			if r.cfg.Webhook.OnSuccess {
+				r.webhook.Notify(webhook.EventSuccess(run.JobName, run.ID, records, &run.StartedAt, extracted))
+			}
 			return
 		}
 		lastErr = err
@@ -151,7 +170,12 @@ func (r *Runner) Execute(ctx context.Context, run *Run) {
 		RunID:     run.ID,
 		Message:   lastErr.Error(),
 	})
+	// Fire failure webhook
+	if r.cfg.Webhook.OnFailure {
+		r.webhook.Notify(webhook.EventFailure(run.JobName, run.ID, lastErr.Error(), &run.StartedAt))
+	}
 }
+
 
 // executeOnce performs a single execution attempt
 func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
