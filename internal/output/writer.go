@@ -138,3 +138,41 @@ func (w *CSVWriter) Close() error {
 	w.writer.Flush()
 	return w.file.Close()
 }
+
+// JSONWriter writes all records as a single pretty-printed JSON array
+type JSONWriter struct {
+	mu      sync.Mutex
+	file    *os.File
+	records []map[string]interface{}
+}
+
+// NewJSONWriter creates a JSON array file writer
+func NewJSONWriter(path string) (*JSONWriter, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("opening json file: %w", err)
+	}
+	return &JSONWriter{file: f}, nil
+}
+
+// Write buffers a record for later serialization
+func (w *JSONWriter) Write(record map[string]interface{}) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.records = append(w.records, record)
+	return nil
+}
+
+// Close serializes all buffered records as a pretty JSON array and closes the file
+func (w *JSONWriter) Close() error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	enc := json.NewEncoder(w.file)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(w.records); err != nil {
+		_ = w.file.Close()
+		return fmt.Errorf("encoding json array: %w", err)
+	}
+	return w.file.Close()
+}
