@@ -1,0 +1,50 @@
+# ScrapeOwl Example: JSON API Scraper
+# Demonstrates scraping a JSON API endpoint (e.g., GitHub releases, public REST API).
+# No browser steps needed — the page content IS the JSON.
+# Uses XPath / regex extractors to parse API JSON responses.
+
+name: "github-releases-api"
+start_url: "https://api.github.com/repos/golang/go/releases?per_page=10"
+
+# No browser steps required — navigate directly to the API endpoint
+steps: []
+
+extractors:
+  # Extract the raw JSON body using a regex on the page source
+  - name: releases_json
+    type: regex
+    pattern: '(\[.*\])'
+    group: 1
+
+  # AI-powered structured extraction from the JSON response
+  - name: latest_release
+    type: ai
+    prompt: >
+      The page contains a JSON array of GitHub releases. Extract the first (most recent) release:
+      version tag, release date, and release notes URL. Return as JSON:
+      {"tag": "...", "date": "...", "url": "..."}
+
+output:
+  format: jsonl
+  path: "./output/github-releases.jsonl"
+
+# Job-level timeout: abort if extraction takes more than 2 minutes
+timeout: "2m"
+
+retry:
+  max_attempts: 3
+  backoff: exponential
+
+# Webhook on completion
+webhook:
+  url: "${WEBHOOK_URL:-}"
+  on_success: true
+  on_failure: false
+
+ai:
+  provider: openai
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4o-mini"
+
+# Run every hour
+schedule: "0 * * * *"
