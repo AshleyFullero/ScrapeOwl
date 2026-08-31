@@ -15,16 +15,19 @@ var envVarPattern = regexp.MustCompile(`\$\{([^}]+)\}`)
 
 // JobConfig represents the full YAML job definition
 type JobConfig struct {
-	Name     string      `yaml:"name"`
-	StartURL string      `yaml:"start_url"`
-	Steps    []Step      `yaml:"steps"`
-	Extract  []Extractor `yaml:"extractors"`
-	Output   Output      `yaml:"output"`
-	Proxy    ProxyConfig `yaml:"proxy"`
-	Captcha  Captcha     `yaml:"captcha"`
-	AI       AIConfig    `yaml:"ai"`
-	Retry    RetryConfig `yaml:"retry"`
-	Schedule string      `yaml:"schedule"`
+	Name        string        `yaml:"name"`
+	StartURL    string        `yaml:"start_url"`
+	Steps       []Step        `yaml:"steps"`
+	Extract     []Extractor   `yaml:"extractors"`
+	Output      Output        `yaml:"output"`
+	Proxy       ProxyConfig   `yaml:"proxy"`
+	Captcha     Captcha       `yaml:"captcha"`
+	AI          AIConfig      `yaml:"ai"`
+	Retry       RetryConfig   `yaml:"retry"`
+	Webhook     WebhookConfig `yaml:"webhook"`
+	Schedule    string        `yaml:"schedule"`
+	Timeout     string        `yaml:"timeout,omitempty"`     // overall job timeout e.g. "10m"
+	Concurrency int           `yaml:"concurrency,omitempty"` // max parallel extractors (future)
 }
 
 // Step represents a single browser automation action
@@ -52,8 +55,16 @@ type Extractor struct {
 
 // Output defines how to store the extracted data
 type Output struct {
-	Format string `yaml:"format"` // jsonl, csv
+	Format string `yaml:"format"` // jsonl, csv, json
 	Path   string `yaml:"path"`
+}
+
+// WebhookConfig defines webhook notification settings
+type WebhookConfig struct {
+	URL       string `yaml:"url,omitempty"`
+	Secret    string `yaml:"secret,omitempty"`
+	OnSuccess bool   `yaml:"on_success"`
+	OnFailure bool   `yaml:"on_failure"`
 }
 
 // ProxyConfig defines proxy settings
@@ -138,8 +149,13 @@ func (c *JobConfig) Validate() error {
 	if c.StartURL == "" {
 		return fmt.Errorf("start_url is required")
 	}
-	if c.Output.Format != "" && c.Output.Format != "jsonl" && c.Output.Format != "csv" {
-		return fmt.Errorf("output.format must be 'jsonl' or 'csv', got: %s", c.Output.Format)
+	if c.Output.Format != "" && c.Output.Format != "jsonl" && c.Output.Format != "csv" && c.Output.Format != "json" {
+		return fmt.Errorf("output.format must be 'jsonl', 'csv', or 'json', got: %s", c.Output.Format)
+	}
+	if c.Webhook.URL != "" {
+		if len(c.Webhook.URL) < 8 || (c.Webhook.URL[:7] != "http://" && c.Webhook.URL[:8] != "https://") {
+			return fmt.Errorf("webhook.url must start with http:// or https://")
+		}
 	}
 	for i, step := range c.Steps {
 		if err := validateStep(step, i); err != nil {
@@ -208,5 +224,13 @@ func (c *JobConfig) applyDefaults() {
 	}
 	if c.AI.Model == "" {
 		c.AI.Model = "gpt-4o"
+	}
+	// Webhook defaults: notify on both events if URL is set but neither flag is set
+	if c.Webhook.URL != "" && !c.Webhook.OnSuccess && !c.Webhook.OnFailure {
+		c.Webhook.OnSuccess = true
+		c.Webhook.OnFailure = true
+	}
+	if c.Concurrency <= 0 {
+		c.Concurrency = 1
 	}
 }
