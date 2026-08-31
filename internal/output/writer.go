@@ -27,6 +27,8 @@ func NewWriter(format, path string) (Writer, error) {
 		return NewJSONLWriter(path)
 	case "csv":
 		return NewCSVWriter(path)
+	case "json":
+		return NewJSONWriter(path)
 	default:
 		return nil, fmt.Errorf("unknown output format: %s", format)
 	}
