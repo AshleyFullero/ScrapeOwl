@@ -70,10 +70,16 @@
         <span class="status-dot"></span>
         <span class="status-text">Connecting...</span>
       </div>
-      <a href="https://github.com/ashleyfullero/scrapeowl" target="_blank" rel="noopener" class="github-link" id="github-link">
-        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
-        <span>GitHub</span>
-      </a>
+      <div class="sidebar-footer-row">
+        <button class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle light/dark theme" title="Toggle theme">
+          <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+          <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/></svg>
+        </button>
+        <a href="https://github.com/ashleyfullero/scrapeowl" target="_blank" rel="noopener" class="github-link" id="github-link">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+          <span>GitHub</span>
+        </a>
+      </div>
     </div>
   </aside>
 
@@ -200,6 +206,14 @@
         </button>
       </header>
 
+      <!-- Jobs search bar + export -->
+      <div class="jobs-toolbar">
+        <div class="search-wrapper">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="search-icon" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+          <input type="search" id="jobs-search" class="search-input" placeholder="Search jobs..." oninput="filterJobs()" aria-label="Search jobs"/>
+        </div>
+      </div>
+
       <div id="jobs-grid" class="jobs-grid">
         <div class="loading-state">
           <div class="spinner"></div>
@@ -226,7 +240,27 @@
         </div>
       </header>
 
+      <!-- Stats enriched: today stats -->
+      <div class="stats-today" id="stats-today" style="display:none">
+        <span id="stat-today-runs"></span>
+        <span id="stat-avg-duration"></span>
+      </div>
+
       <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:0.75rem;flex:1">
+            <select id="runs-filter-status" class="select-input" onchange="loadRuns()" aria-label="Filter by status">
+              <option value="">All Status</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+              <option value="running">Running</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportRunsCSV()" id="export-runs-btn" title="Export visible runs as CSV">
+            ↓ Export CSV
+          </button>
+        </div>
         <table class="runs-table" role="grid" aria-label="Run history">
           <thead>
             <tr>
@@ -247,6 +281,12 @@
             </tr>
           </tbody>
         </table>
+        <!-- Pagination Controls -->
+        <div class="pagination" id="runs-pagination">
+          <button class="btn btn-ghost btn-sm" id="runs-prev-btn" onclick="runsPagePrev()" disabled>← Prev</button>
+          <span class="pagination-info" id="runs-page-info">Page 1</span>
+          <button class="btn btn-ghost btn-sm" id="runs-next-btn" onclick="runsPageNext()">Next →</button>
+        </div>
       </div>
     </div>
 
@@ -331,6 +371,7 @@
                 <div class="code-list">
                   <code>jsonl</code>
                   <code>csv</code>
+                  <code>json</code>
                 </div>
               </div>
               <div class="help-section">
@@ -375,6 +416,14 @@
     </div>
     <div id="modal-body" class="modal-body">
       <div class="run-log" id="run-log" role="log" aria-live="polite" aria-label="Run log"></div>
+      <!-- Extracted data section: shown when data is available -->
+      <div id="run-extracted-section" class="run-extracted-section" style="display:none">
+        <div class="run-extracted-header">
+          <h3>Extracted Data</h3>
+          <button class="btn btn-ghost btn-sm" onclick="copyExtractedData()" id="copy-extracted-btn">Copy JSON</button>
+        </div>
+        <pre id="run-extracted-data" class="run-extracted-pre"></pre>
+      </div>
     </div>
   </div>
 </div>

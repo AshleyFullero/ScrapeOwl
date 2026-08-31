@@ -10,17 +10,25 @@ const state = {
   ws: null,
   jobs: [],
   runs: [],
+  filteredRuns: [],
   stats: { total_runs: 0, total_records: 0, total_errors: 0, active_runs: 0 },
   currentPage: 'dashboard',
   activityLog: [],
   wsReconnectTimer: null,
   wsReconnectDelay: 1000,
+  // Pagination
+  runsPage: 0,
+  runsLimit: 25,
+  runsTotal: 0,
+  // Theme
+  theme: localStorage.getItem('scrapeowl-theme') || 'dark',
 };
 
 const MAX_ACTIVITY = 200;
 
 // ==================== Init ====================
 document.addEventListener('DOMContentLoaded', () => {
+  applyTheme(state.theme);
   initParticles();
   connectWebSocket();
   initEditor();
@@ -243,6 +251,18 @@ function updateStatsUI(data) {
     : 100;
   const rateEl = document.getElementById('success-rate');
   if (rateEl) rateEl.textContent = `${rate}%`;
+
+  // Show enhanced stats row
+  const todayEl = document.getElementById('stat-today-runs');
+  const durEl = document.getElementById('stat-avg-duration');
+  const statsToday = document.getElementById('stats-today');
+  if (todayEl && data.today_runs !== undefined) {
+    todayEl.textContent = `Today: ${data.today_runs} runs`;
+    if (data.avg_duration_ms) {
+      durEl.textContent = `Avg: ${(data.avg_duration_ms / 1000).toFixed(1)}s`;
+    }
+    if (statsToday) statsToday.style.display = 'flex';
+  }
 }
 
 // ==================== Jobs ====================
@@ -250,11 +270,17 @@ async function loadJobs() {
   try {
     const jobs = await apiFetch('/api/jobs');
     state.jobs = jobs || [];
-    renderJobs(state.jobs);
+    filterJobs(); // applies search filter on load
   } catch (e) {
     console.error('loadJobs:', e);
     showToast('error', 'Error', 'Failed to load jobs');
   }
+}
+
+function filterJobs() {
+  const q = (document.getElementById('jobs-search')?.value || '').toLowerCase();
+  const filtered = q ? state.jobs.filter(j => j.name.toLowerCase().includes(q)) : state.jobs;
+  renderJobs(filtered);
 }
 
 async function loadDashboardJobs() {
@@ -318,6 +344,9 @@ function renderJobCard(job) {
         </button>
         <button class="btn btn-ghost btn-sm" onclick="showJobDetail('${escAttr(job.id)}')" id="view-job-${escAttr(job.id)}">
           View
+        </button>
+        <button class="btn ${job.enabled ? 'btn-ghost' : 'btn-run'} btn-sm" onclick="toggleJobEnabled('${escAttr(job.id)}', ${job.enabled})" id="toggle-job-${escAttr(job.id)}" title="${job.enabled ? 'Disable job' : 'Enable job'}">
+          ${job.enabled ? '⏸ Disable' : '▶ Enable'}
         </button>
         <button class="btn btn-danger btn-sm" onclick="deleteJob('${escAttr(job.id)}', '${escAttr(job.name)}')" id="delete-job-${escAttr(job.id)}">
           Delete
@@ -432,9 +461,10 @@ async function createJob() {
 // ==================== Runs ====================
 async function loadRecentRuns() {
   try {
-    const runs = await apiFetch('/api/runs');
-    state.runs = runs || [];
-    renderRecentRuns(state.runs.slice(0, 8));
+    const data = await apiFetch('/api/runs?limit=8&offset=0');
+    const runs = data.runs || data || [];
+    state.runs = runs;
+    renderRecentRuns(runs.slice(0, 8));
   } catch (e) {
     console.error('loadRecentRuns:', e);
   }
@@ -443,14 +473,50 @@ async function loadRecentRuns() {
 async function loadRuns() {
   try {
     const status = document.getElementById('runs-filter-status')?.value;
-    let url = '/api/runs';
-    const runs = await apiFetch(url);
-    state.runs = runs || [];
-    renderRunsTable(state.runs);
+    let url = `/api/runs?limit=${state.runsLimit}&offset=${state.runsPage * state.runsLimit}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`;
+    const data = await apiFetch(url);
+    const runs = data.runs || data || [];
+    state.runs = runs;
+    state.runsTotal = data.total || runs.length;
+    renderRunsTable(runs);
+    renderRunsPagination();
   } catch (e) {
     console.error('loadRuns:', e);
     showToast('error', 'Error', 'Failed to load runs');
   }
+}
+
+function renderRunsPagination() {
+  const prevBtn = document.getElementById('runs-prev-btn');
+  const nextBtn = document.getElementById('runs-next-btn');
+  const info = document.getElementById('runs-page-info');
+  const totalPages = Math.max(1, Math.ceil(state.runsTotal / state.runsLimit));
+  const currentPage = state.runsPage + 1;
+
+  if (info) info.textContent = `Page ${currentPage} of ${totalPages} (${state.runsTotal} total)`;
+  if (prevBtn) prevBtn.disabled = state.runsPage === 0;
+  if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+}
+
+function runsPagePrev() {
+  if (state.runsPage > 0) {
+    state.runsPage--;
+    loadRuns();
+  }
+}
+
+function runsPageNext() {
+  const totalPages = Math.ceil(state.runsTotal / state.runsLimit);
+  if (state.runsPage + 1 < totalPages) {
+    state.runsPage++;
+    loadRuns();
+  }
+}
+
+// Reset to first page when filter changes
+function resetRunsPage() {
+  state.runsPage = 0;
 }
 
 function filterRuns() {
