@@ -280,7 +280,7 @@ func (h *Handlers) launchRun(job *store.Job) (string, error) {
 			cancel()
 		}()
 
-		jobRunner, err := runner.New(cfg, h.logger)
+		jobRunner, err := runner.NewWithStore(cfg, h.logger, h.store)
 		if err != nil {
 			h.logger.Error("creating runner", "err", err)
 			return

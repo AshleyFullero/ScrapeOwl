@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"os"
 	"time"
 
@@ -11,6 +12,21 @@ import (
 
 	"github.com/ashleyfullero/scrapeowl/internal/config"
 )
+
+// stealthUserAgents is a rotating list of modern Chrome user agents
+var stealthUserAgents = []string{
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+}
+
+// randomUserAgent returns a random User-Agent from the stealth list
+func randomUserAgent() string {
+	return stealthUserAgents[rand.Intn(len(stealthUserAgents))]
+}
 
 // Browser manages a Chrome browser instance via CDP
 type Browser struct {
@@ -65,9 +81,12 @@ func New(opts Options, logger *slog.Logger) (*Browser, error) {
 		chromedp.WindowSize(opts.WindowWidth, opts.WindowHeight),
 	)
 
-	if opts.UserAgent != "" {
-		allocOpts = append(allocOpts, chromedp.UserAgent(opts.UserAgent))
+	// Set User-Agent: prefer explicit opt, otherwise pick a random stealth UA
+	ua := opts.UserAgent
+	if ua == "" {
+		ua = randomUserAgent()
 	}
+	allocOpts = append(allocOpts, chromedp.UserAgent(ua))
 
 	if opts.ProxyURL != "" {
 		allocOpts = append(allocOpts,
@@ -94,6 +113,12 @@ func New(opts Options, logger *slog.Logger) (*Browser, error) {
 		allocCancel()
 		return nil, fmt.Errorf("starting browser: %w", err)
 	}
+
+	// Override navigator.webdriver to reduce detection
+	_ = chromedp.Run(ctx, chromedp.Evaluate(
+		`Object.defineProperty(navigator, 'webdriver', {get: () => undefined})`,
+		nil,
+	))
 
 	return &Browser{
 		allocCtx:    allocCtx,
