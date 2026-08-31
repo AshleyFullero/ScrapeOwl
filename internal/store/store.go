@@ -403,3 +403,13 @@ func minLen(a, b int) int {
 	}
 	return b
 }
+
+// marshalJSON is a local wrapper for json.Marshal
+func marshalJSON(v interface{}) ([]byte, error) {
+	return json.Marshal(v)
+}
+
+// unmarshalJSON is a local wrapper for json.Unmarshal
+func unmarshalJSON(data []byte, v interface{}) error {
+	return json.Unmarshal(data, v)
+}
