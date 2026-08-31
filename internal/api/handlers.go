@@ -330,7 +330,15 @@ func (h *Handlers) StopRun(w http.ResponseWriter, r *http.Request) {
 // ListRuns handles GET /api/runs
 func (h *Handlers) ListRuns(w http.ResponseWriter, r *http.Request) {
 	jobID := r.URL.Query().Get("job_id")
-	runs, err := h.store.ListRuns(jobID, 50)
+
+	// Pagination params
+	limit := parseIntQuery(r, "limit", 25)
+	offset := parseIntQuery(r, "offset", 0)
+	if limit > 100 {
+		limit = 100
+	}
+
+	runs, err := h.store.ListRunsPaged(jobID, limit, offset)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "failed to list runs")
 		return
@@ -338,7 +346,15 @@ func (h *Handlers) ListRuns(w http.ResponseWriter, r *http.Request) {
 	if runs == nil {
 		runs = []*store.Run{}
 	}
-	writeJSON(w, http.StatusOK, runs)
+
+	total, _ := h.store.CountRuns(jobID)
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"runs":   runs,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
+	})
 }
 
 // GetRun handles GET /api/runs/{id}
@@ -413,9 +429,86 @@ func (h *Handlers) ValidateYAML(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetRunData handles GET /api/runs/{id}/data
+func (h *Handlers) GetRunData(w http.ResponseWriter, r *http.Request) {
+	id := extractID(r.URL.Path, "/api/runs/")
+	id = strings.TrimSuffix(id, "/data")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing run id")
+		return
+	}
+
+	data, err := h.store.GetExtractedData(id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to get run data")
+		return
+	}
+	if data == nil {
+		data = map[string]interface{}{}
+	}
+	writeJSON(w, http.StatusOK, data)
+}
+
+// EnableJob handles POST /api/jobs/{id}/enable
+func (h *Handlers) EnableJob(w http.ResponseWriter, r *http.Request) {
+	id := extractID(r.URL.Path, "/api/jobs/")
+	id = strings.TrimSuffix(id, "/enable")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing job id")
+		return
+	}
+
+	if err := h.store.SetJobEnabled(id, true); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to enable job")
+		return
+	}
+
+	// Re-schedule if job has a schedule
+	job, _ := h.store.GetJob(id)
+	if job != nil && job.Schedule != "" {
+		_ = h.scheduler.Add(job.ID, job.Name, job.Schedule)
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "enabled"})
+}
+
+// DisableJob handles POST /api/jobs/{id}/disable
+func (h *Handlers) DisableJob(w http.ResponseWriter, r *http.Request) {
+	id := extractID(r.URL.Path, "/api/jobs/")
+	id = strings.TrimSuffix(id, "/disable")
+	if id == "" {
+		writeError(w, http.StatusBadRequest, "missing job id")
+		return
+	}
+
+	if err := h.store.SetJobEnabled(id, false); err != nil {
+		writeError(w, http.StatusInternalServerError, "failed to disable job")
+		return
+	}
+
+	// Remove from scheduler
+	h.scheduler.Remove(id)
+	writeJSON(w, http.StatusOK, map[string]string{"status": "disabled"})
+}
+
 // extractID extracts a path segment after a prefix
 func extractID(path, prefix string) string {
 	after := strings.TrimPrefix(path, prefix)
 	parts := strings.SplitN(after, "/", 2)
 	return parts[0]
+}
+
+// parseIntQuery parses an integer query parameter with a fallback default
+func parseIntQuery(r *http.Request, key string, def int) int {
+	v := r.URL.Query().Get(key)
+	if v == "" {
+		return def
+	}
+	n := 0
+	for _, c := range v {
+		if c < '0' || c > '9' {
+			return def
+		}
+		n = n*10 + int(c-'0')
+	}
+	return n
 }

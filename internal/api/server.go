@@ -11,6 +11,9 @@ import (
 	"github.com/ashleyfullero/scrapeowl/internal/store"
 )
 
+// uptime tracks when the server started
+var serverStart = time.Now()
+
 // Server is the main HTTP server
 type Server struct {
 	http     *http.Server
@@ -23,17 +26,28 @@ type Server struct {
 func NewServer(addr string, st *store.Store, sched *scheduler.Scheduler, logger *slog.Logger) *Server {
 	hub := NewHub(logger)
 	handlers := NewHandlers(st, hub, sched, logger)
+	rl := NewRateLimiter(200) // 200 requests/min per IP
 
 	mux := http.NewServeMux()
 
 	// Static dashboard
 	mux.Handle("/", http.FileServer(http.Dir("web")))
 
+	// Health check (unauthenticated, no rate limit)
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"status":    "ok",
+			"version":   "dev",
+			"uptime_s":  int(time.Since(serverStart).Seconds()),
+			"timestamp": time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+
 	// WebSocket
 	mux.HandleFunc("/ws", hub.ServeWS)
 
-	// API routes with CORS middleware
-	api := withCORS(withLogging(logger, mux))
+	// API routes with CORS + logging + rate limit middleware
+	api := withCORS(withLogging(logger, withRateLimit(rl, mux)))
 
 	// Jobs
 	mux.HandleFunc("/api/jobs", func(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +67,18 @@ func NewServer(addr string, st *store.Store, sched *scheduler.Scheduler, logger 
 		case isRunAction(path):
 			if r.Method == http.MethodPost {
 				handlers.RunJob(w, r)
+			} else {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			}
+		case isEnableAction(path):
+			if r.Method == http.MethodPost {
+				handlers.EnableJob(w, r)
+			} else {
+				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			}
+		case isDisableAction(path):
+			if r.Method == http.MethodPost {
+				handlers.DisableJob(w, r)
 			} else {
 				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -81,11 +107,14 @@ func NewServer(addr string, st *store.Store, sched *scheduler.Scheduler, logger 
 
 	mux.HandleFunc("/api/runs/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		if isStopAction(path) && r.Method == http.MethodPost {
+		switch {
+		case isStopAction(path) && r.Method == http.MethodPost:
 			handlers.StopRun(w, r)
-		} else if r.Method == http.MethodGet {
+		case isDataAction(path) && r.Method == http.MethodGet:
+			handlers.GetRunData(w, r)
+		case r.Method == http.MethodGet:
 			handlers.GetRun(w, r)
-		} else {
+		default:
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		}
 	})
@@ -180,4 +209,16 @@ func isRunAction(path string) bool {
 
 func isStopAction(path string) bool {
 	return len(path) > 5 && path[len(path)-5:] == "/stop"
+}
+
+func isDataAction(path string) bool {
+	return len(path) > 5 && path[len(path)-5:] == "/data"
+}
+
+func isEnableAction(path string) bool {
+	return len(path) > 7 && path[len(path)-7:] == "/enable"
+}
+
+func isDisableAction(path string) bool {
+	return len(path) > 8 && path[len(path)-8:] == "/disable"
 }
