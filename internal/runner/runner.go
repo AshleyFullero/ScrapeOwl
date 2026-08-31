@@ -178,7 +178,7 @@ func (r *Runner) Execute(ctx context.Context, run *Run) {
 
 
 // executeOnce performs a single execution attempt
-func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
+func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, map[string]interface{}, error) {
 	bus := run.Bus
 	cfg := r.cfg
 
@@ -195,14 +195,14 @@ func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
 
 	b, err := browser.New(opts, r.logger)
 	if err != nil {
-		return 0, fmt.Errorf("launching browser: %w", err)
+		return 0, nil, fmt.Errorf("launching browser: %w", err)
 	}
 	defer b.Close()
 
 	// Navigate to start URL
 	bus.Log(LogLevelInfo, fmt.Sprintf("Navigating to %s", cfg.StartURL), run.JobName, run.ID)
 	if err := b.Navigate(cfg.StartURL); err != nil {
-		return 0, fmt.Errorf("navigating to start URL: %w", err)
+		return 0, nil, fmt.Errorf("navigating to start URL: %w", err)
 	}
 
 	// Execute steps
@@ -210,7 +210,7 @@ func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
 	for i, step := range cfg.Steps {
 		select {
 		case <-ctx.Done():
-			return 0, ctx.Err()
+			return 0, nil, ctx.Err()
 		default:
 		}
 
@@ -241,7 +241,7 @@ func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
 			if proxyURL != "" {
 				r.proxyPool.MarkFailure(proxyURL)
 			}
-			return 0, fmt.Errorf("step %d (%s): %w", i+1, step.Action, stepErr)
+			return 0, nil, fmt.Errorf("step %d (%s): %w", i+1, step.Action, stepErr)
 		}
 	}
 
@@ -255,7 +255,7 @@ func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
 	// Run extractors
 	if len(cfg.Extract) == 0 {
 		bus.Log(LogLevelWarn, "No extractors defined, job complete with 0 records", run.JobName, run.ID)
-		return 0, nil
+		return 0, nil, nil
 	}
 
 	results, extractErrs := extractor.ExtractAll(b, cfg.Extract, pageHTML, cfg.AI)
@@ -278,12 +278,12 @@ func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
 	bus.Log(LogLevelInfo, fmt.Sprintf("Writing output to %s", cfg.Output.Path), run.JobName, run.ID)
 	w, err := output.NewWriter(cfg.Output.Format, cfg.Output.Path)
 	if err != nil {
-		return 0, fmt.Errorf("creating output writer: %w", err)
+		return 0, nil, fmt.Errorf("creating output writer: %w", err)
 	}
 	defer w.Close()
 
 	if err := w.Write(results); err != nil {
-		return 0, fmt.Errorf("writing output: %w", err)
+		return 0, nil, fmt.Errorf("writing output: %w", err)
 	}
 
 	bus.Publish(Event{
@@ -298,7 +298,7 @@ func (r *Runner) executeOnce(ctx context.Context, run *Run) (int, error) {
 		r.proxyPool.MarkSuccess(proxyURL)
 	}
 
-	return 1, nil
+	return 1, results, nil
 }
 
 // calcBackoff returns the wait duration for a given attempt
