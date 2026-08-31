@@ -14,6 +14,7 @@ import (
 	"github.com/ashleyfullero/scrapeowl/internal/extractor"
 	"github.com/ashleyfullero/scrapeowl/internal/output"
 	"github.com/ashleyfullero/scrapeowl/internal/proxy"
+	"github.com/ashleyfullero/scrapeowl/internal/webhook"
 )
 
 // Status represents the current state of a run
@@ -40,16 +41,28 @@ type Run struct {
 	cancel      context.CancelFunc
 }
 
+// DataStore is the interface the Runner uses to persist extracted data
+type DataStore interface {
+	SaveExtractedData(runID string, data map[string]interface{}) error
+}
+
 // Runner orchestrates the full execution of a scraping job
 type Runner struct {
 	cfg        *config.JobConfig
 	proxyPool  *proxy.Pool
 	captchaSvr captcha.Solver
+	webhook    *webhook.Notifier
+	store      DataStore
 	logger     *slog.Logger
 }
 
 // New creates a new Runner for a job config
 func New(cfg *config.JobConfig, logger *slog.Logger) (*Runner, error) {
+	return NewWithStore(cfg, logger, nil)
+}
+
+// NewWithStore creates a Runner that can also persist extracted data
+func NewWithStore(cfg *config.JobConfig, logger *slog.Logger, st DataStore) (*Runner, error) {
 	if logger == nil {
 		logger = slog.New(slog.NewTextHandler(os.Stderr, nil))
 	}
@@ -64,10 +77,14 @@ func New(cfg *config.JobConfig, logger *slog.Logger) (*Runner, error) {
 		return nil, fmt.Errorf("creating captcha solver: %w", err)
 	}
 
+	wh := webhook.New(cfg.Webhook.URL, cfg.Webhook.Secret, logger)
+
 	return &Runner{
 		cfg:        cfg,
 		proxyPool:  proxyPool,
 		captchaSvr: captchaSolver,
+		webhook:    wh,
+		store:      st,
 		logger:     logger,
 	}, nil
 }
