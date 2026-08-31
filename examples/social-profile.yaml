@@ -1,0 +1,76 @@
+# ScrapeOwl Example: Social Media Public Profile Scraper
+# Scrapes public information from a LinkedIn-style profile page.
+# Uses CSS extractors with multiple: true for collecting list items.
+
+name: "social-profile-scraper"
+start_url: "https://www.linkedin.com/in/example-profile"
+
+steps:
+  # Wait for the main profile card to load
+  - action: wait
+    selector: ".pv-top-card"
+    timeout: 15s
+  # Scroll down to load sections below the fold
+  - action: scroll
+    wait: 2s
+  - action: scroll
+    wait: 1s
+
+extractors:
+  - name: full_name
+    type: css
+    selector: ".pv-top-card h1"
+    attribute: text
+
+  - name: headline
+    type: css
+    selector: ".pv-top-card .text-body-medium"
+    attribute: text
+
+  - name: location
+    type: css
+    selector: ".pv-top-card .pb2 .text-body-small"
+    attribute: text
+
+  - name: about
+    type: css
+    selector: "#about ~ .pvs-list .visually-hidden"
+    attribute: text
+
+  - name: skills
+    type: css
+    selector: ".pv-skill-category-entity__name"
+    attribute: text
+    multiple: true
+
+  - name: experience_titles
+    type: css
+    selector: ".pv-entity__summary-info h3"
+    attribute: text
+    multiple: true
+
+  # AI extraction for structured summary
+  - name: profile_summary
+    type: ai
+    prompt: >
+      From the HTML, extract the person's top 3 skills and current job title.
+      Return as JSON: {"current_title": "...", "top_skills": ["...", "...", "..."]}
+
+output:
+  format: json
+  path: "./output/social-profile.json"
+
+retry:
+  max_attempts: 2
+  backoff: linear
+
+# Webhook notification when scrape completes
+webhook:
+  url: "${WEBHOOK_URL:-}"
+  on_success: true
+  on_failure: true
+
+ai:
+  provider: openai
+  api_key: "${OPENAI_API_KEY}"
+  model: "gpt-4o"
