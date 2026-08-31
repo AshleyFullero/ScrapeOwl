@@ -108,7 +108,7 @@ func runServe(addr, dbPath string, debug bool) {
 			return
 		}
 
-		jobRunner, err := runner.New(cfg, logger)
+		jobRunner, err := runner.NewWithStore(cfg, logger, st)
 		if err != nil {
 			logger.Error("creating runner", "job", jobName, "err", err)
 			return
@@ -301,7 +301,7 @@ func newLogger(debug bool) *slog.Logger {
 }
 
 func printUsage() {
-	fmt.Println(`ScrapeOwl - Web Scraping Operations Platform
+	fmt.Print(`ScrapeOwl - Web Scraping Operations Platform
 
 Usage:
   scrapeowl <command> [options]

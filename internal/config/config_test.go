@@ -174,3 +174,85 @@ retry:
 		t.Errorf("expected proxy type 'static', got '%s'", cfg.Proxy.Type)
 	}
 }
+func TestParse_JSONOutputFormat(t *testing.T) {
+	yaml := `
+name: "json-test"
+start_url: "https://example.com"
+output:
+  format: json
+  path: "./output/test.json"
+`
+	cfg, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("unexpected error for json format: %v", err)
+	}
+	if cfg.Output.Format != "json" {
+		t.Errorf("expected format 'json', got '%s'", cfg.Output.Format)
+	}
+}
+
+func TestParse_WebhookConfig(t *testing.T) {
+	yaml := `
+name: "webhook-test"
+start_url: "https://example.com"
+webhook:
+  url: "https://hooks.example.com/notify"
+  secret: "mysecret"
+`
+	cfg, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Webhook.URL != "https://hooks.example.com/notify" {
+		t.Errorf("expected webhook url, got '%s'", cfg.Webhook.URL)
+	}
+	// Defaults: should auto-enable both on_success and on_failure
+	if !cfg.Webhook.OnSuccess {
+		t.Error("expected on_success to be defaulted to true when URL is set")
+	}
+	if !cfg.Webhook.OnFailure {
+		t.Error("expected on_failure to be defaulted to true when URL is set")
+	}
+}
+
+func TestParse_WebhookInvalidURL(t *testing.T) {
+	yaml := `
+name: "bad-webhook"
+start_url: "https://example.com"
+webhook:
+  url: "ftp://invalid"
+`
+	_, err := Parse([]byte(yaml))
+	if err == nil {
+		t.Fatal("expected error for invalid webhook URL")
+	}
+}
+
+func TestParse_Timeout(t *testing.T) {
+	yaml := `
+name: "timeout-test"
+start_url: "https://example.com"
+timeout: "5m"
+`
+	cfg, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Timeout != "5m" {
+		t.Errorf("expected timeout '5m', got '%s'", cfg.Timeout)
+	}
+}
+
+func TestParse_ConcurrencyDefault(t *testing.T) {
+	yaml := `
+name: "conc-test"
+start_url: "https://example.com"
+`
+	cfg, err := Parse([]byte(yaml))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.Concurrency != 1 {
+		t.Errorf("expected default concurrency 1, got %d", cfg.Concurrency)
+	}
+}
