@@ -205,8 +205,13 @@ func (s *Store) GetRun(id string) (*Run, error) {
 	return scanRun(row)
 }
 
-// ListRuns returns runs, optionally filtered by job ID
+// ListRuns returns runs, optionally filtered by job ID with pagination support
 func (s *Store) ListRuns(jobID string, limit int) ([]*Run, error) {
+	return s.ListRunsPaged(jobID, limit, 0)
+}
+
+// ListRunsPaged returns runs with limit and offset for pagination
+func (s *Store) ListRunsPaged(jobID string, limit, offset int) ([]*Run, error) {
 	var rows *sql.Rows
 	var err error
 
@@ -217,14 +222,14 @@ func (s *Store) ListRuns(jobID string, limit int) ([]*Run, error) {
 	if jobID != "" {
 		rows, err = s.db.Query(
 			`SELECT id, job_id, job_name, status, started_at, completed_at, records, error, created_at
-			 FROM runs WHERE job_id = ? ORDER BY created_at DESC LIMIT ?`,
-			jobID, limit,
+			 FROM runs WHERE job_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+			jobID, limit, offset,
 		)
 	} else {
 		rows, err = s.db.Query(
 			`SELECT id, job_id, job_name, status, started_at, completed_at, records, error, created_at
-			 FROM runs ORDER BY created_at DESC LIMIT ?`,
-			limit,
+			 FROM runs ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+			limit, offset,
 		)
 	}
 	if err != nil {
@@ -241,6 +246,80 @@ func (s *Store) ListRuns(jobID string, limit int) ([]*Run, error) {
 		runs = append(runs, run)
 	}
 	return runs, rows.Err()
+}
+
+// CountRuns returns the total number of runs for pagination metadata
+func (s *Store) CountRuns(jobID string) (int, error) {
+	var count int
+	var err error
+	if jobID != "" {
+		err = s.db.QueryRow(`SELECT COUNT(*) FROM runs WHERE job_id = ?`, jobID).Scan(&count)
+	} else {
+		err = s.db.QueryRow(`SELECT COUNT(*) FROM runs`).Scan(&count)
+	}
+	return count, err
+}
+
+// SaveExtractedData persists the extracted fields for a run
+func (s *Store) SaveExtractedData(runID string, data map[string]interface{}) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	// Delete old records for this run first (idempotent)
+	if _, err := tx.Exec(`DELETE FROM extracted_data WHERE run_id = ?`, runID); err != nil {
+		return fmt.Errorf("clearing old extracted data: %w", err)
+	}
+
+	for fieldName, fieldValue := range data {
+		var valStr string
+		switch v := fieldValue.(type) {
+		case string:
+			valStr = v
+		case nil:
+			valStr = ""
+		default:
+			b, _ := marshalJSON(fieldValue)
+			valStr = string(b)
+		}
+		if _, err := tx.Exec(
+			`INSERT INTO extracted_data (run_id, field_name, field_value) VALUES (?, ?, ?)`,
+			runID, fieldName, valStr,
+		); err != nil {
+			return fmt.Errorf("inserting extracted field '%s': %w", fieldName, err)
+		}
+	}
+	return tx.Commit()
+}
+
+// GetExtractedData retrieves extracted fields for a run as a map
+func (s *Store) GetExtractedData(runID string) (map[string]interface{}, error) {
+	rows, err := s.db.Query(
+		`SELECT field_name, field_value FROM extracted_data WHERE run_id = ? ORDER BY id`,
+		runID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("querying extracted data: %w", err)
+	}
+	defer rows.Close()
+
+	result := make(map[string]interface{})
+	for rows.Next() {
+		var name, value string
+		if err := rows.Scan(&name, &value); err != nil {
+			return nil, err
+		}
+		// Try to decode as JSON; fall back to plain string
+		var parsed interface{}
+		if err := unmarshalJSON([]byte(value), &parsed); err != nil {
+			result[name] = value
+		} else {
+			result[name] = parsed
+		}
+	}
+	return result, rows.Err()
 }
 
 // GetStats returns platform-wide statistics with enriched fields
